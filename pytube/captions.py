@@ -1,3 +1,4 @@
+import json
 import math
 import os
 import time
@@ -45,7 +46,7 @@ class Caption:
     @property
     def json_captions(self) -> dict:
         """Download and parse the json caption tracks."""
-        json_captions_url = self.url.replace('fmt=srv3','fmt=json3')
+        json_captions_url = self.url.replace('fmt=srv3', 'fmt=json3')
         text = request.get(json_captions_url)
         parsed = json.loads(text)
         assert parsed['wireMagic'] == 'pb3', 'Unexpected captions format'
@@ -81,24 +82,47 @@ class Caption:
             XML formatted caption tracks.
         """
         segments = []
+
         root = ElementTree.fromstring(xml_captions)
+        sequence_number = 0
         for i, child in enumerate(list(root)):
-            text = child.text or ""
-            caption = unescape(text.replace("\n", " ").replace("  ", " "),)
             try:
-                duration = float(child.attrib["dur"])
+                text = child.text or ""
+                try:
+                    duration = float(child.attrib["dur"])
+                except KeyError:
+                    duration = 0.0
+                start = float(child.attrib["start"])
+
+                caption = unescape(text.replace("\n", " ").replace("  ", " "), )
+                end = start + duration
+                sequence_number += 1  # convert from 0-indexed to 1.
+                line = "{seq}\n{start} --> {end}\n{text}\n".format(
+                    seq=sequence_number,
+                    start=self.float_to_srt_time_format(start),
+                    end=self.float_to_srt_time_format(end),
+                    text=caption,
+                )
+                segments.append(line)
             except KeyError:
-                duration = 0.0
-            start = float(child.attrib["start"])
-            end = start + duration
-            sequence_number = i + 1  # convert from 0-indexed to 1.
-            line = "{seq}\n{start} --> {end}\n{text}\n".format(
-                seq=sequence_number,
-                start=self.float_to_srt_time_format(start),
-                end=self.float_to_srt_time_format(end),
-                text=caption,
-            )
-            segments.append(line)
+                if child.tag == "head":
+                    continue
+
+                for paragraph in child.findall('p'):
+                    text = paragraph.text or ""
+                    start = int(paragraph.attrib['t']) / 1000
+                    duration = int(paragraph.attrib['d']) / 1000
+
+                    caption = unescape(text.replace("\n", " ").replace("  ", " "), )
+                    end = start + duration
+                    sequence_number += 1  # convert from 0-indexed to 1.
+                    line = "{seq}\n{start} --> {end}\n{text}\n".format(
+                        seq=sequence_number,
+                        start=self.float_to_srt_time_format(start),
+                        end=self.float_to_srt_time_format(end),
+                        text=caption,
+                    )
+                    segments.append(line)
         return "\n".join(segments).strip()
 
     def download(

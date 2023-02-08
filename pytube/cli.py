@@ -9,6 +9,7 @@ import shutil
 import sys
 import datetime as dt
 import subprocess  # nosec
+
 from typing import List, Optional
 
 import pytube.exceptions as exceptions
@@ -282,7 +283,7 @@ def _unique_name(base: str, subtype: str, media_type: str, target: str) -> str:
         file_name = f"{base}_{media_type}_{counter}"
         file_path = os.path.join(target, f"{file_name}.{subtype}")
         if not os.path.exists(file_path):
-            return file_name
+            return f"{file_name}.{subtype}"
         counter += 1
 
 
@@ -360,6 +361,8 @@ def _ffmpeg_downloader(
     :param Path target:
         A valid Path object
     """
+    assert shutil.which("ffmpeg.exe")
+
     video_unique_name = _unique_name(
         safe_filename(video_stream.title),
         video_stream.subtype,
@@ -377,18 +380,21 @@ def _ffmpeg_downloader(
     _download(stream=audio_stream, target=target, filename=audio_unique_name)
 
     video_path = os.path.join(
-        target, f"{video_unique_name}.{video_stream.subtype}"
+        target, f"{video_unique_name}"
     )
     audio_path = os.path.join(
-        target, f"{audio_unique_name}.{audio_stream.subtype}"
+        target, f"{audio_unique_name}"
     )
     final_path = os.path.join(
         target, f"{safe_filename(video_stream.title)}.{video_stream.subtype}"
     )
 
+    print("Processing video and audio using ffmpeg...")
     subprocess.run(  # nosec
         [
             "ffmpeg",
+            "-loglevel",
+            "error",
             "-i",
             video_path,
             "-i",
@@ -398,7 +404,10 @@ def _ffmpeg_downloader(
             final_path,
         ]
     )
+    print("Saved {}".format(final_path))
+    print("Removing {}...".format(video_path))
     os.unlink(video_path)
+    print("Removing {}...".format(audio_path))
     os.unlink(audio_path)
 
 
