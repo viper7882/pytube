@@ -257,6 +257,10 @@ def _download(
     filesize_megabytes = stream.filesize // 1048576
     print(f"{filename or stream.default_filename} | {filesize_megabytes} MB")
     file_path = stream.get_file_path(filename=filename, output_path=target)
+
+    if stream.type == "audio" and file_path.endswith(".mp4"):
+        file_path = file_path.replace(".mp4", ".m4a")
+
     if stream.exists_at_path(file_path):
         print(f"Already downloaded at:\n{file_path}")
         return
