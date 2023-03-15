@@ -256,8 +256,10 @@ def _download(
 ) -> None:
     filesize_megabytes = stream.filesize // 1048576
 
-    if stream.type == "audio" and stream.default_filename.endswith(".mp4"):
-        filename = stream.default_filename.replace(".mp4", ".m4a")
+    if filename is None:
+        if stream.type == "audio":
+            if stream.default_filename.endswith(".mp4"):
+                filename = stream.default_filename.replace(".mp4", ".m4a")
 
     print(f"{filename or stream.default_filename} | {filesize_megabytes} MB")
     file_path = stream.get_file_path(filename=filename, output_path=target)
