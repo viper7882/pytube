@@ -1,3 +1,4 @@
+import inspect
 import json
 import math
 import os
@@ -109,20 +110,37 @@ class Caption:
                     continue
 
                 for paragraph in child.findall('p'):
-                    text = paragraph.text or ""
-                    start = int(paragraph.attrib['t']) / 1000
-                    duration = int(paragraph.attrib['d']) / 1000
+                    # If either start time or duration is undefined
+                    if 't' not in paragraph.attrib.keys() or 'd' not in paragraph.attrib.keys():
+                        continue
 
-                    caption = unescape(text.replace("\n", " ").replace("  ", " "), )
-                    end = start + duration
-                    sequence_number += 1  # convert from 0-indexed to 1.
-                    line = "{seq}\n{start} --> {end}\n{text}\n".format(
-                        seq=sequence_number,
-                        start=self.float_to_srt_time_format(start),
-                        end=self.float_to_srt_time_format(end),
-                        text=caption,
-                    )
-                    segments.append(line)
+                    try:
+                        if paragraph.text is not None:
+                            text = paragraph.text
+                        else:
+                            text = ""
+                            for s in paragraph.findall('s'):
+                                if s.text:
+                                    text += s.text.strip() + " "
+
+                        start = int(paragraph.attrib['t']) / 1000
+                        duration = int(paragraph.attrib['d']) / 1000
+
+                        caption = unescape(text.replace("\n", " ").replace("  ", " "), )
+                        end = start + duration
+                        sequence_number += 1  # convert from 0-indexed to 1.
+                        line = "{seq}\n{start} --> {end}\n{text}\n".format(
+                            seq=sequence_number,
+                            start=self.float_to_srt_time_format(start),
+                            end=self.float_to_srt_time_format(end),
+                            text=caption,
+                        )
+                        if text == "":
+                            # Generate warning to user
+                            print("WARNING: text is empty for", line)
+                        segments.append(line)
+                    except KeyError as err:
+                        raise RuntimeError("{}: {}".format(inspect.currentframe(), err))
         return "\n".join(segments).strip()
 
     def download(
