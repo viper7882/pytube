@@ -162,7 +162,7 @@ def _parse_args(
         const="mp4",
         nargs="?",
         help=(
-            "Download the audio for a given URL at the highest bitrate available"
+            "Download the audio for a given URL at the highest bitrate available. "
             "Defaults to mp4 format if none is specified"
         ),
     )
@@ -172,8 +172,8 @@ def _parse_args(
         const="best",
         nargs="?",
         help=(
-            "Downloads the audio and video stream for resolution provided"
-            "If no resolution is provided, downloads the best resolution"
+            "Downloads the audio and video stream for resolution provided. "
+            "If no resolution is provided, downloads the best resolution. "
             "Runs the command line program ffmpeg to combine the audio and video"
         ),
     )
