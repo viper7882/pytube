@@ -262,6 +262,8 @@ class YouTube:
         # (tier 3 age restriction)
         if playability_status == 'UNPLAYABLE':
             raise exceptions.AgeRestrictedError(self.video_id)
+        elif playability_status == 'ERROR':
+            raise exceptions.VideoUnavailable(self.video_id)
 
         self._vid_info = innertube_response
 
@@ -474,6 +476,6 @@ class YouTube:
             The video id of the YouTube video.
 
         :rtype: :class:`YouTube <YouTube>`
-        
+
         """
         return YouTube(f"https://www.youtube.com/watch?v={video_id}")
